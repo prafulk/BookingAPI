@@ -1,23 +1,25 @@
-// userModel.mjs
+import sequelize from '../config/database.mjs';
+import { DataTypes } from 'sequelize';
+import Booking from './bookingModel.mjs'; 
 
-import { db } from '../db/connection.mjs';
+const User = sequelize.define('User', {
+    name: {
+        type: DataTypes.STRING,
+        allowNull: false
+    },
+    email: {
+        type: DataTypes.STRING,
+        allowNull: false,
+        unique: true
+    },
+    // ... any other attributes if necessary ...
+});
 
-// Fetch all users associated with a specific agent
-export const fetchUsersByAgent = async (agentId) => {
-    try {
-        const query = `
-            SELECT u.id, u.name, u.email 
-            FROM users AS u
-            JOIN bookings AS b ON u.id = b.user_id
-            WHERE b.agent_id = ?
-            GROUP BY u.id, u.name, u.email
-        `;
+// Define the relationships
+User.hasMany(Booking, {
+    foreignKey: 'userId', // Assuming the 'Booking' table has 'userId' as the foreign key
+    as: 'bookings',  // Alias if you fetch a user's bookings: user.getBookings()
+    onDelete: 'CASCADE'  // If a user is deleted, its associated bookings will be deleted too.
+});
 
-        const [rows] = await db.execute(query, [agentId]);
-        return rows;
-
-    } catch (error) {
-        console.error(`Error fetching users by agent: ${error.message}`);
-        throw error;
-    }
-};
+export default User;
