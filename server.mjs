@@ -1,6 +1,8 @@
 import express from 'express';
 import bodyParser from 'body-parser';
 import combinedRoutes from './routes/index.mjs';  // Import combined routes
+import checkAgentId from './middlewares/checkAgentId.mjs';  // Import middleware for Agent ID check
+import errorHandling from './middlewares/errorHandling.mjs';  // Import our advanced error handling middleware
 
 const app = express();
 const PORT = 3000;
@@ -11,14 +13,7 @@ const PORT = 3000;
 app.use(bodyParser.json());
 
 // Middleware to check for the "X-Agent-Id" header
-app.use((req, res, next) => {
-    if (!req.headers['x-agent-id']) {
-        return res.status(400).send({ error: 'X-Agent-Id header is missing.' });
-    }
-    // Add the agent ID to the request object for use in other routes
-    req.agentId = req.headers['x-agent-id'];
-    next();
-});
+app.use(checkAgentId);
 
 // Use combined routes from the routes directory
 app.use('/api', combinedRoutes);
@@ -28,11 +23,8 @@ app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
 
-// Basic error handler
-app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
-});
+// Advanced error handler
+app.use(errorHandling);
 
 // Start the server
 app.listen(PORT, () => {
