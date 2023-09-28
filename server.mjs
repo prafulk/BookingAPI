@@ -1,14 +1,16 @@
 import express from 'express';
 import bodyParser from 'body-parser';
-// You can import other required modules/libraries as you progress
+import combinedRoutes from './routes/index.mjs';  // Import combined routes
 
 const app = express();
 const PORT = 3000;
 
 // Middlewares
+
+// Use body-parser to parse JSON requests
 app.use(bodyParser.json());
 
-// A middleware to check for the "X-Agent-Id" header
+// Middleware to check for the "X-Agent-Id" header
 app.use((req, res, next) => {
     if (!req.headers['x-agent-id']) {
         return res.status(400).send({ error: 'X-Agent-Id header is missing.' });
@@ -18,12 +20,13 @@ app.use((req, res, next) => {
     next();
 });
 
-// Sample routes (You can separate these into different route files later)
+// Use combined routes from the routes directory
+app.use('/api', combinedRoutes);
+
+// Sample route, which can be moved or replaced as your app evolves
 app.get('/', (req, res) => {
     res.send('Hello, World!');
 });
-
-// Placeholder for other routes like /scheduler, /booking, /users, /agents, etc.
 
 // Basic error handler
 app.use((err, req, res, next) => {
@@ -31,7 +34,7 @@ app.use((err, req, res, next) => {
     res.status(500).send('Something broke!');
 });
 
+// Start the server
 app.listen(PORT, () => {
     console.log(`Server started on http://localhost:${PORT}`);
 });
-
