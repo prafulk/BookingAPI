@@ -1,0 +1,19 @@
+{
+  "name": "booking-api",
+  "version": "1.0.0",
+  "description": "An API for booking users by agents for specific tasks.",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["booking", "api", "node"],
+  "author": "Praful Konduru",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "express": "^4.17.1",
+    "mssql": "^7.2.1"
+  }
+}
