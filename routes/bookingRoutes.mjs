@@ -1,12 +1,20 @@
 import express from 'express';
-import { createBooking, deleteBooking } from '../controllers/bookingController.mjs';
+import {
+    createBooking,
+    getBookings,
+    deleteBooking
+} from '../controllers/bookingController.mjs';
+import { checkAgentId, authorization } from '../middlewares/index.mjs';
 
 const router = express.Router();
 
-// Create a new booking
-router.post('/booking', createBooking);
+// Get all bookings for a given week (Client API)
+router.get('/scheduler', authorization('ADMIN', 'REGULAR'), getBookings);
 
-// Delete a booking
-router.delete('/booking/:id', deleteBooking);
+// Create a booking (Client API)
+router.post('/booking', authorization('ADMIN'), createBooking);
+
+// Delete a specific booking by ID (Client API)
+router.delete('/booking/:id', checkAgentId, authorization('ADMIN'), deleteBooking);
 
 export default router;
