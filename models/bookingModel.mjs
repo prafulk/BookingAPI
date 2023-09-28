@@ -1,31 +1,50 @@
-import sequelize from '../config/database.mjs';
-import { DataTypes } from 'sequelize';
-import Agent from './agentModel.mjs';  // Assuming you have this model defined
-import User from './userModel.mjs';  // Assuming you have this model defined
+import { query } from '../db/databaseConnection.mjs';
 
-const Booking = sequelize.define('Booking', {
-    start_at: {
-        type: DataTypes.DATE,
-        allowNull: false
-    },
-    finish_at: {
-        type: DataTypes.DATE,
-        allowNull: false
-    },
-    // ... potentially other attributes ...
-});
+export const createBooking = async (userId, agentId, start_at, finish_at) => {
+    try {
+        const result = await query(`
+            INSERT INTO bookings (userId, agentId, start_at, finish_at) 
+            VALUES (@0, @1, @2, @3)
+        `, [userId, agentId, start_at, finish_at]);
 
-// Define the relationships
-Booking.belongsTo(User, {
-    foreignKey: 'userId', // Assuming the 'Booking' table has 'userId' as the foreign key
-    as: 'user',  // Alias if you fetch the user of a booking: booking.getUser()
-    onDelete: 'CASCADE'  // If a booking is deleted, its association with the user will also be removed.
-});
+        if (result.rowsAffected[0] > 0) {
+            return { success: true, id: result.recordset[0].id };
+        } else {
+            return { success: false };
+        }
 
-Booking.belongsTo(Agent, {
-    foreignKey: 'agentId', // Assuming the 'Booking' table has 'agentId' as the foreign key
-    as: 'agent',  // Alias if you fetch the agent of a booking: booking.getAgent()
-    onDelete: 'CASCADE'  // If a booking is deleted, its association with the agent will also be removed.
-});
+    } catch (err) {
+        console.error(err);
+        throw new Error('Error creating booking.');
+    }
+};
 
-export default Booking;
+export const deleteBooking = async (bookingId) => {
+    try {
+        const result = await query(`
+            DELETE FROM bookings WHERE id = @0
+        `, [bookingId]);
+
+        return result.rowsAffected[0] > 0;
+
+    } catch (err) {
+        console.error(err);
+        throw new Error('Error deleting booking.');
+    }
+};
+
+export const getBookingById = async (bookingId) => {
+    try {
+        const result = await query(`
+            SELECT * FROM bookings WHERE id = @0
+        `, [bookingId]);
+
+        return result.recordset[0];
+
+    } catch (err) {
+        console.error(err);
+        throw new Error('Error fetching booking.');
+    }
+};
+
+// ... (other functions can be added here, e.g., updating a booking, getting all bookings for a user/agent, etc.)
