@@ -1,46 +1,29 @@
-import { fetchBookingsForWeek } from '../models/bookingModel.mjs'; // A hypothetical database/model layer
+import { getBookingsForWeek } from '../models/bookingModel.mjs';
 
-// Get bookings for a specific week.
-export const getBookingsForWeek = async (req, res) => {
+// Returns all bookings and user data for a specific week for the authenticated agent
+const getWeeklyBookings = async (req, res, next) => {
     try {
-        const weekDate = req.query.week;
+        const agentId = req.agentId;
 
-        // Validate the weekDate
-        if (!weekDate || !isValidDate(weekDate)) { // isValidDate is a function you might define to check date format
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid or missing week date.',
-            });
+        // Week date format can be YYYY-MM-DD representing the start of the week (like a Monday)
+        const weekStartDate = req.query.week;
+
+        if (!weekStartDate) {
+            return res.status(400).json({ error: 'Week date parameter is missing.' });
         }
 
-        // Retrieve bookings and user data for the specified week from the database.
-        const bookings = await fetchBookingsForWeek(weekDate, req.agentId);
+        const bookings = await getBookingsForWeek(agentId, weekStartDate);
 
-        // Check if bookings exist
-        if (bookings.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: `No bookings found for the week of ${weekDate}`,
-            });
+        if (!bookings || bookings.length === 0) {
+            return res.status(404).json({ message: 'No bookings found for the specified week.' });
         }
 
-        res.json({
-            success: true,
-            data: bookings,
-        });
-
+        res.status(200).json(bookings);
     } catch (error) {
-        console.error(`Error fetching bookings for the week: ${error.message}`);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error. Please try again later.',
-        });
+        next(error);
     }
 };
 
-// Helper function to validate date format
-const isValidDate = (dateString) => {
-    // A basic check for YYYY-MM-DD format; you can expand on this
-    const regex = /^\d{4}-\d{2}-\d{2}$/;
-    return regex.test(dateString);
+export {
+    getWeeklyBookings
 };
