@@ -1,22 +1,25 @@
-// schedulerModel.mjs
+import { query } from '../db/databaseConnection.mjs';
 
-import { db } from '../db/connection.mjs'; 
-// Fetch bookings for a specific week
-export const fetchBookingsForWeek = async (startDate, endDate) => {
+export const getBookingsForWeek = async (weekStartDate) => {
     try {
-        const query = `
-            SELECT b.id, u.name as userName, u.email as userEmail, a.name as agentName, a.email as agentEmail, b.start_at, b.finish_at
-            FROM bookings AS b
-            JOIN users AS u ON b.user_id = u.id
-            JOIN agents AS a ON b.agent_id = a.id
-            WHERE b.start_at >= ? AND b.finish_at <= ?
-        `;
+        // Assuming weekStartDate is the start of the week, we want to get bookings from this date to 6 days ahead.
+        const weekEndDate = new Date(weekStartDate);
+        weekEndDate.setDate(weekEndDate.getDate() + 6);
 
-        const [rows] = await db.execute(query, [startDate, endDate]);
-        return rows;
+        const result = await query(`
+            SELECT b.id as booking_id, b.start_at, b.finish_at, u.id as user_id, u.name as user_name, a.id as agent_id, a.name as agent_name 
+            FROM bookings b
+            JOIN users u ON b.userId = u.id
+            JOIN agents a ON b.agentId = a.id
+            WHERE b.start_at >= @0 AND b.start_at <= @1
+        `, [weekStartDate, weekEndDate]);
 
-    } catch (error) {
-        console.error(`Error fetching bookings for the week: ${error.message}`);
-        throw error;
+        return result.recordset;
+
+    } catch (err) {
+        console.error(err);
+        throw new Error('Error fetching bookings for the week.');
     }
 };
+
+// ... (additional functions can be added, if needed, to handle other scheduler related tasks)
