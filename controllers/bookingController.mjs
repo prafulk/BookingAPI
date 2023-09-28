@@ -1,66 +1,55 @@
-import { createBooking as createBookingInDb, deleteBooking as deleteBookingInDb } from '../models/bookingModel.mjs';
+import express from 'express';
+import { query } from '../db/databaseConnection.mjs';
 
-// Create a booking for a user which belongs to the current agent
-export const createBooking = async (req, res) => {
+const router = express.Router();
+
+// Endpoint: POST /booking
+// Purpose: Create a booking for a user which belongs to the current agent
+router.post('/booking', async (req, res) => {
     try {
-        const { userId, startAt, finishAt } = req.body;
-        const agentId = req.headers['X-Agent-Id'];
+        const { userId, start_at, finish_at } = req.body;
+        const agentId = req.agentId;
 
-        // Basic validation
-        if (!userId || !startAt || !finishAt) {
-            return res.status(400).json({
-                success: false,
-                message: 'Missing required booking fields.',
-            });
+        if (!userId || !start_at || !finish_at) {
+            return res.status(400).send({ error: 'Missing required fields.' });
         }
 
-        const bookingData = {
-            userId,
-            agentId,
-            startAt,
-            finishAt,
-        };
+        const result = await query(`
+            INSERT INTO bookings (userId, agentId, start_at, finish_at) 
+            VALUES (@0, @1, @2, @3)
+        `, [userId, agentId, start_at, finish_at]);
 
-        const newBooking = await createBookingInDb(bookingData);
+        if (result.rowsAffected[0] === 0) {
+            return res.status(400).send({ error: 'Failed to create booking.' });
+        }
 
-        res.status(201).json({
-            success: true,
-            message: 'Booking created successfully.',
-            data: newBooking,
-        });
+        res.status(201).send({ message: 'Booking created successfully.' });
 
-    } catch (error) {
-        console.error(`Error creating booking: ${error.message}`);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error. Please try again later.',
-        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ error: 'An error occurred while creating the booking.' });
     }
-};
+});
 
-// Delete booking
-export const deleteBooking = async (req, res) => {
+// Endpoint: DELETE /booking/:id
+// Purpose: Delete booking
+router.delete('/booking/:id', async (req, res) => {
     try {
         const bookingId = req.params.id;
+        const result = await query(`
+            DELETE FROM bookings WHERE id = @0
+        `, [bookingId]);
 
-        const result = await deleteBookingInDb(bookingId);
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: `No booking found with ID: ${bookingId}`,
-            });
+        if (result.rowsAffected[0] === 0) {
+            return res.status(404).send({ error: 'Booking not found.' });
         }
 
-        res.status(200).json({
-            success: true,
-            message: `Booking with ID ${bookingId} deleted successfully.`,
-        });
+        res.status(200).send({ message: 'Booking deleted successfully.' });
 
-    } catch (error) {
-        console.error(`Error deleting booking: ${error.message}`);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error. Please try again later.',
-        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).send({ error: 'An error occurred while deleting the booking.' });
     }
-};
+});
+
+export default router;
