@@ -1,32 +1,53 @@
-import sequelize from '../config/database.mjs';
-import { DataTypes } from 'sequelize';
-import Booking from './bookingModel.mjs';  // Assuming you have this model defined
-import User from './userModel.mjs';  // Assuming you have this model defined
+import db from '../db/databaseConnection.mjs';
 
-const Agent = sequelize.define('Agent', {
-    name: {
-        type: DataTypes.STRING,
-        allowNull: false
-    },
-    email: {
-        type: DataTypes.STRING,
-        allowNull: false,
-        unique: true
-    },
-    // There might be other attributes like 'role' based on the previous structure
-});
+// Fetches a specific agent based on agentId
+const getAgentById = async (agentId) => {
+    try {
+        const query = 'SELECT * FROM agents WHERE id = ?';
+        const results = await db.query(query, [agentId]);
+        return results[0];
+    } catch (error) {
+        throw new Error('Error fetching agent: ' + error.message);
+    }
+};
 
-// Define the relationships
-Agent.hasMany(Booking, {
-    foreignKey: 'agentId', // Assuming the 'Booking' table has 'agentId' as the foreign key
-    as: 'bookings',  // Alias if you fetch an agent's bookings: agent.getBookings()
-    onDelete: 'CASCADE'  // If an agent is deleted, its associated bookings will be deleted too.
-});
+// Fetches all agents
+const getAllAgents = async () => {
+    try {
+        const query = 'SELECT * FROM agents';
+        const results = await db.query(query);
+        return results;
+    } catch (error) {
+        throw new Error('Error fetching agents: ' + error.message);
+    }
+};
 
-Agent.hasMany(User, {
-    foreignKey: 'agentId', // Assuming the 'User' table has 'agentId' as the foreign key
-    as: 'users',  // Alias if you fetch an agent's users: agent.getUsers()
-    onDelete: 'CASCADE'  // If an agent is deleted, its associated users will be deleted too.
-});
+// Fetches all users associated with a specific agent
+const getUsersForAgent = async (agentId) => {
+    try {
+        // Assuming there's a linking table or foreign key in users table that tracks which agent a user belongs to.
+        const query = 'SELECT * FROM users WHERE agent_id = ?';
+        const results = await db.query(query, [agentId]);
+        return results;
+    } catch (error) {
+        throw new Error('Error fetching users for agent: ' + error.message);
+    }
+};
 
-export default Agent;
+// Fetches all bookings made by a specific agent
+const getBookingsForAgent = async (agentId) => {
+    try {
+        const query = 'SELECT * FROM bookings WHERE agent_id = ?';
+        const results = await db.query(query, [agentId]);
+        return results;
+    } catch (error) {
+        throw new Error('Error fetching bookings for agent: ' + error.message);
+    }
+};
+
+export {
+    getAgentById,
+    getAllAgents,
+    getUsersForAgent,
+    getBookingsForAgent
+};
