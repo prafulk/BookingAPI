@@ -1,39 +1,31 @@
-// bookingModel.mjs
+import sequelize from '../config/database.mjs';
+import { DataTypes } from 'sequelize';
+import Agent from './agentModel.mjs';  // Assuming you have this model defined
+import User from './userModel.mjs';  // Assuming you have this model defined
 
-import { db } from '../db/connection.mjs';
+const Booking = sequelize.define('Booking', {
+    start_at: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    finish_at: {
+        type: DataTypes.DATE,
+        allowNull: false
+    },
+    // ... potentially other attributes ...
+});
 
-// Create a booking
-export const createBooking = async (bookingData) => {
-    try {
-        const { userId, agentId, startAt, finishAt } = bookingData;
+// Define the relationships
+Booking.belongsTo(User, {
+    foreignKey: 'userId', // Assuming the 'Booking' table has 'userId' as the foreign key
+    as: 'user',  // Alias if you fetch the user of a booking: booking.getUser()
+    onDelete: 'CASCADE'  // If a booking is deleted, its association with the user will also be removed.
+});
 
-        const query = `
-            INSERT INTO bookings (user_id, agent_id, start_at, finish_at)
-            VALUES (?, ?, ?, ?)
-        `;
+Booking.belongsTo(Agent, {
+    foreignKey: 'agentId', // Assuming the 'Booking' table has 'agentId' as the foreign key
+    as: 'agent',  // Alias if you fetch the agent of a booking: booking.getAgent()
+    onDelete: 'CASCADE'  // If a booking is deleted, its association with the agent will also be removed.
+});
 
-        const [result] = await db.execute(query, [userId, agentId, startAt, finishAt]);
-        return { id: result.insertId, ...bookingData }; // Return new booking data including new ID
-
-    } catch (error) {
-        console.error(`Error creating booking: ${error.message}`);
-        throw error;
-    }
-};
-
-// Delete a booking
-export const deleteBooking = async (bookingId) => {
-    try {
-        const query = `
-            DELETE FROM bookings
-            WHERE id = ?
-        `;
-
-        const [result] = await db.execute(query, [bookingId]);
-        return result;
-
-    } catch (error) {
-        console.error(`Error deleting booking: ${error.message}`);
-        throw error;
-    }
-};
+export default Booking;
